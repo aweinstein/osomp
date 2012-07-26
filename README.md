@@ -21,3 +21,28 @@ Optional (to reproduce the A*OMP results)
 
 [2]: https://github.com/aweinstein/mlabwrap
 [3]: http://students.sabanciuniv.edu/~karahanoglu/AStar/AStarOMPv_01.00.zip
+
+Note
+====
+
+If you want to run A*star, make sure to add the `matlab` directory to Matlab
+(e.g., by adding a 'addpath path/to/osomp/matlab` line in `startup.m`.
+
+Usage
+=====
+
+Create residue comparison plot (Fig. 2 of the paper)
+
+    $ python osomp.py --residue
+
+Create rate of recovery plot (Fig. 3(a-c))
+
+    $ python osomp.py --rate
+
+To also run A*OMP:
+
+    $ python osomp.py --rate --astar
+
+Create relative error for noisy observations (Fig. 3(d))
+
+    $ python osomp.py --noisy

@@ -1,1 +1,4 @@
 *.pdf
+*.npy
+matlab/AStarOMPExample.m
+matlab/AStarOMP.m

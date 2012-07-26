@@ -6,13 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
 
-## try:
-##     from mlabwrap import mlab
-## except ImportError:
-##     Use_Matlab = False
-## else:
-##     Use_Matlab = True
-
 params = {'axes.labelsize': 30,
           'axes.titlesize': 30,
           'text.fontsize': 24,
@@ -23,7 +16,6 @@ params = {'axes.labelsize': 30,
           'font.family': 'serif',
           'font.serif' : ['Times'],
           }
-
 mpl.rcParams.update(params)
 
 def save_fig(fig, file_name):
@@ -421,16 +413,160 @@ def residue_comparison():
     save_fig(figs, 'residue_comparison.pdf')
     return locals()
 
+def recovery_rate(run_astar, **options):
+    """Find rate of recovery for OMP, LRT-OMP and ASTAR."""
+    trials = options.pop('trials', 50)
+    n = options.pop('n', 128)
+    m = options.pop('m', 30)
+    dist = options.pop('dist', 'normal')
+    kmin = options.pop('kmin', 2)
+    kmax = options.pop('kmax', 10)
+    print ('Recovery rate for n=%(n)i, m=%(m)i, trials=%(trials)i, '
+           'dist=%(dist)s' % locals())
+    ks = range(kmin, kmax + 1)
+    p_omp = []
+    p_lrt_omp = []
+    p_astar = []
+    for k in ks:
+        p  = prob_of_recovery(n, m, k, method='omp', n_trials=trials,
+                              dist=dist)
+        p_omp.append(p)
+        p = prob_of_recovery(n, m, k, method='lrt-omp', n_trials=trials,
+                             dist=dist)
+        p_lrt_omp.append(p)
+        if run_astar:
+            p = prob_of_recovery(n, m, k, method='astar', n_trials=trials,
+                                 dist=dist)
+            p_astar.append(p)
+        print
+
+    # Save the results
+    fn = lambda var: '%s_%d_%d_%s_%d' % (var, n, m, dist, trials)
+    np.save(fn('ks'), ks)
+    np.save(fn('p_omp'), p_omp)
+    np.save(fn('p_lrt_omp'), p_lrt_omp)
+    np.save(fn('p_astar'), p_astar)
+
+def noisy():
+    n = 128
+    m = 30
+    dist = 'uniform'
+    ks = range(1, 11)
+    trials = 500
+    sigma = 0.1
+    np.random.seed(1)
+    rel_errs_omp = []
+    rel_errs_lrt = []
+    for k in ks:
+        print 'k:', k
+        errs_omp = 0
+        errs_lrt = 0
+        for _ in range(trials):
+            x = get_sparse_x(n, k, dist=dist)
+            A = random_dict(m, n)
+            noise = sigma * np.random.randn(m, 1)
+            y = np.dot(A, x) + noise
+            epsilon = np.sqrt(2 * m) * sigma
+            x_hat = omp(A, y, epsilon=epsilon)
+            errs_omp += norm(x.flatten() - x_hat)**2 / norm(x)**2
+            x_hat = lrt_omp(A, y, k, epsilon=epsilon)
+            errs_lrt += norm(x.flatten() - x_hat)**2 / norm(x)**2
+
+        rel_errs_omp.append(errs_omp / trials)
+        rel_errs_lrt.append(errs_lrt / trials)
+
+    fn = lambda var: 'noisy_%s_%d_%d_%s_%d' % (var, n, m, dist, trials)
+    np.save(fn('ks'), ks)
+    np.save(fn('rel_errs_omp'), rel_errs_omp)
+    np.save(fn('rel_errs_lrt'), rel_errs_lrt)
+
+def plot_recovery(run_astar):
+    '''Plot previously saved recovery rate results.
+    '''
+    fn_suffixs = ('128_30_uniform_500',
+                  '128_30_binary_500',
+                  '128_20_normal_500')
+    figs = []
+    print 'Plotting ...'
+    for suffix in fn_suffixs:
+        ks = np.load('ks_%s.npy' % suffix)
+        p_omp = np.load('p_omp_%s.npy' % suffix)
+        p_lrt_omp = np.load('p_lrt_omp_%s.npy' % suffix)
+        p_astar = np.load('p_astar_%s.npy' % suffix)
+
+        figs.append(plt.figure())
+        ms = 12
+        plt.plot(ks, p_lrt_omp, 'o-', label='OS-OMP', markersize=ms)
+        plt.plot(ks, p_omp, 's-', label='OMP', markersize=ms)
+        if run_astar:
+            plt.plot(ks, p_astar, 'D-', label='A*OMP', markersize=ms)
+        plt.grid(color=(0.7, 0.7, 0.7))
+        plt.ylim(0, 1.05)
+        plt.legend(loc='lower left')
+        plt.xlabel(r'sparsity level $K$')
+        plt.ylabel('rate of recovery')
+        plt.title(suffix.split('_')[2].capitalize() + ' distribution')
+        plt.tight_layout()
+
+    save_fig(figs, 'rate.pdf')
+
+def plot_noisy():
+    '''Plot previously saved noisy result.'''
+    ks = np.load('noisy_ks_128_30_uniform_500.npy')
+    rel_errs_omp = np.load('noisy_rel_errs_omp_128_30_uniform_500.npy')
+    rel_errs_lrt = np.load('noisy_rel_errs_lrt_128_30_uniform_500.npy')
+    fig = plt.figure()
+    ms = 12
+    plt.plot(ks, rel_errs_lrt, 'o-', label='OS-OMP', markersize=ms)
+    plt.plot(ks, rel_errs_omp, 's-', label='OMP', markersize=ms)
+    plt.legend(loc='upper left')
+    plt.grid(color=(0.7, 0.7, 0.7))
+    plt.xlabel(r'sparsity level $K$')
+    plt.ylabel(r'relative $\ell_2$ error')
+    plt.title('Noisy observations scenario')
+    plt.tight_layout()
+
+    save_fig(fig, 'noisy.pdf')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='OS-OMP')
     parser.add_argument('--residue', action='store_true', default=False,
                         help='Generate residue comparison result')
+    parser.add_argument('--astar', action='store_true', default=False,
+                        help='Run A*OMP if posible')
+    parser.add_argument('--rate', action='store_true', default=False,
+                        help='Generate rate of recovery result')
+    parser.add_argument('--noisy', action='store_true', default=False,
+                        help='Generate relative error for noisy obs. result')
+
 
     args = parser.parse_args()
+
+    run_astar = False
+    if args.astar:
+        try:
+            from mlabwrap import mlab
+        except ImportError:
+            run_astar = False
+        else:
+            run_astar= True
 
     did_nothing = True
     if args.residue:
         residue_comparison()
+
+        did_nothing = False
+
+    if args.rate:
+        recovery_rate(run_astar, n=128, m=30, dist='uniform', trials=500)
+        recovery_rate(run_astar, n=128, m=30, dist='binary', trials=500)
+        recovery_rate(run_astar, n=128, m=20, dist='normal', trials=500)
+        plot_recovery(run_astar)
+        did_nothing = False
+
+    if args.noisy:
+        noisy()
+        plot_noisy()
         did_nothing = False
 
     if did_nothing:
