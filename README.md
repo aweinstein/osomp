@@ -11,7 +11,7 @@ Dependencies
 * Python >=2.6
 * NumPy >= 1.3
 * SciPy >= 0.7
-* Matplotlib >= 1.0
+* Matplotlib >= 1.2
 
 Optional (to reproduce the A*OMP results)
 
