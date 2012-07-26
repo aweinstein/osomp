@@ -1,4 +1,4 @@
-import sys
+import argparse
 
 import numpy as np
 from numpy.linalg import norm, pinv, lstsq
@@ -6,26 +6,24 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib as mpl
 
-try:
-    from mlabwrap import mlab
-except ImportError:
-    Use_Matlab = False
-else:
-    Use_Matlab = True
+## try:
+##     from mlabwrap import mlab
+## except ImportError:
+##     Use_Matlab = False
+## else:
+##     Use_Matlab = True
 
-
-params = {'backend': 'Agg',
-          'axes.labelsize': 40,
+params = {'axes.labelsize': 30,
+          'axes.titlesize': 30,
           'text.fontsize': 24,
           'legend.fontsize': 20,
-          'xtick.labelsize': 30,
-          'ytick.labelsize': 30,
-          'savefig.dpi' : 600,
-          'ps.usedistiller' : 'xpdf',
+          'xtick.labelsize': 20,
+          'ytick.labelsize': 20,
           'text.usetex' : True,
           'font.family': 'serif',
           'font.serif' : ['Times'],
           }
+
 mpl.rcParams.update(params)
 
 def save_fig(fig, file_name):
@@ -37,7 +35,6 @@ def save_fig(fig, file_name):
     else:
         fig.savefig(file_name, format='pdf', dpi=300)
     print 'File %s created' % file_name
-
 
 class DictSet(dict):
     def __init__(self, *args):
@@ -222,7 +219,6 @@ def residue(A, y, Gamma):
         return residue
 
 predecessors = DictSet()
-# Do we cache the succesosrs?
 def succesors(A, y, Gamma, P=2):
     m = len(y)
     succs = []     # May be return a generator to save memory?
@@ -331,7 +327,7 @@ def lrt_omp(A, y, k, epsilon=1e-6, **options):
     else:
         return x_hat
 
-def experiment_2(plot=False, **options):
+def run_OMP(plot=False, **options):
     """Recover one signal using OMP."""
     n = options.pop('n', 128)
     k = options.pop('k', 5)
@@ -364,8 +360,8 @@ def experiment_2(plot=False, **options):
     if return_locals:
         return locals()
 
-def experiment_3(**options):
-    """Recover one signal using LRT-OMP."""
+def run_OSOMP(**options):
+    """Recover one signal using OS-OMP."""
     n = options.pop('n', 128)
     k = options.pop('k', 5)
     m = options.pop('m', 20)
@@ -391,7 +387,7 @@ def experiment_3(**options):
     if return_locals:
         return locals()
 
-def experiment_7(mode='thesis'):
+def residue_comparison():
     """Compare OMP and LRT-OMP.
 
     The format of the plots depends on mode. Available options are 'thesis',
@@ -403,26 +399,8 @@ def experiment_7(mode='thesis'):
     k = 5
     seed = 3
     delta = 0.18
-    d_omp = experiment_2(n=n, m=m, k=k, seed=seed)
-    d_lrt = experiment_3(n=n, m=m, k=k, seed=seed, delta=delta)
-
-    if mode in ['thesis', 'poster']:
-        params = {'axes.labelsize': 30,
-                  'axes.titlesize': 30,
-                  'text.fontsize': 24,
-                  'legend.fontsize': 20,
-                  'xtick.labelsize': 20,
-                  'ytick.labelsize': 20}
-    elif mode == 'paper':
-        params = {'axes.labelsize': 40,
-                  'text.fontsize': 24,
-                  'legend.fontsize': 20,
-                  'xtick.labelsize': 30,
-                  'ytick.labelsize': 30}
-    else:
-        print 'Unknon mode', mode
-        return
-    mpl.rcParams.update(params)
+    d_omp = run_OMP(n=n, m=m, k=k, seed=seed)
+    d_lrt = run_OSOMP(n=n, m=m, k=k, seed=seed, delta=delta)
 
     figs = []
     figs.append(plt.figure())
@@ -444,4 +422,16 @@ def experiment_7(mode='thesis'):
     return locals()
 
 if __name__ == '__main__':
-    experiment_7()
+    parser = argparse.ArgumentParser(description='OS-OMP')
+    parser.add_argument('--residue', action='store_true', default=False,
+                        help='Generate residue comparison result')
+
+    args = parser.parse_args()
+
+    did_nothing = True
+    if args.residue:
+        residue_comparison()
+        did_nothing = False
+
+    if did_nothing:
+        parser.print_help()
