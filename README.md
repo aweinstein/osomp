@@ -1,9 +1,9 @@
 Code to reproduce the results of the paper
 
-A.J. Weinstein and M.B. Wakin. Online Search Orthogonal Matching Pursuit. In
-IEEE Statistical Signal Processing Workshop [1].
+A.J. Weinstein and M.B. Wakin. [Online Search Orthogonal Matching Pursuit][1]. In
+IEEE Statistical Signal Processing Workshop.
 
-[1] http://www.ocam.cl/static/pdfs/os_omp_spp12.pdf
+[1]: http://www.ocam.cl/static/pdfs/os_omp_spp12.pdf
 
 Dependencies
 ============
@@ -16,8 +16,8 @@ Dependencies
 Optional (to reproduce the A*OMP results)
 
 * Matlab
-* mlabwrap v1.1-pre [2]
-* A*OMP [3]
+* [mlabwrap v1.1-pre][2]
+* [A*OMP][3]
 
 [2]: https://github.com/aweinstein/mlabwrap
 [3]: http://students.sabanciuniv.edu/~karahanoglu/AStar/AStarOMPv_01.00.zip
