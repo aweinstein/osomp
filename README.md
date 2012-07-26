@@ -25,8 +25,8 @@ Optional (to reproduce the A*OMP results)
 Note
 ====
 
-If you want to run A*star, make sure to add the `matlab` directory to Matlab
-(e.g., by adding a `addpath path/to/osomp/matlab` line in `startup.m`.
+If you want to run A*OMP, make sure to add the `matlab` directory to Matlab
+(e.g., by adding `addpath path/to/osomp/matlab` line to `startup.m`.
 
 Usage
 =====
