@@ -26,7 +26,7 @@ Note
 ====
 
 If you want to run A*star, make sure to add the `matlab` directory to Matlab
-(e.g., by adding a 'addpath path/to/osomp/matlab` line in `startup.m`.
+(e.g., by adding a `addpath path/to/osomp/matlab` line in `startup.m`.
 
 Usage
 =====
